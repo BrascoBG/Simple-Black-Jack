@@ -63,20 +63,30 @@ let blackJackGame = {
       value: 11,
     },
   ],
+  wins: 0,
+  losses: 0,
+  draws: 0,
+  isStand: false,
+  isOver: false,
 };
 
 const YOU = blackJackGame.you;
 const DEALER = blackJackGame.dealer;
 const hitSound = new Audio("./sounds/swish.m4a");
+const winSound = new Audio("./sounds/cash.mp3");
+const lossSound = new Audio("./sounds/aww.mp3");
 
 document.querySelector("#hitBtn").addEventListener("click", blackJackHit);
 document.querySelector("#dealBtn").addEventListener("click", blackJackDeal);
+document.querySelector("#standBtn").addEventListener("click", blackJackStand);
 
 function blackJackHit() {
-  let card = randomCard();
-  showCard(YOU, card);
-  updateScore(card, YOU);
-  showResult(YOU);
+  if (blackJackGame.isStand === false) {
+    let card = randomCard();
+    showCard(YOU, card);
+    updateScore(card, YOU);
+    showResult(YOU);
+  }
 }
 
 function randomCard() {
@@ -94,22 +104,31 @@ function showCard(activePlayer, card) {
 }
 
 function blackJackDeal() {
-  let yourImages = document.querySelector(YOU.div).querySelectorAll("img");
-  let dealerImages = document.querySelector(DEALER.div).querySelectorAll("img");
+  if (blackJackGame.isOver === true) {
+    blackJackGame.isStand = false;
+    let yourImages = document.querySelector(YOU.div).querySelectorAll("img");
+    let dealerImages = document
+      .querySelector(DEALER.div)
+      .querySelectorAll("img");
 
-  //loop 1
-  dealerImages.forEach((image) => image.remove());
+    //loop 1
+    dealerImages.forEach((image) => image.remove());
 
-  //loop 2
-  for (const image of yourImages) {
-    image.remove();
+    //loop 2
+    for (const image of yourImages) {
+      image.remove();
+    }
+    YOU.score = 0;
+    DEALER.score = 0;
+    document.querySelector(YOU.scoreSpan).textContent = "0";
+    document.querySelector(YOU.scoreSpan).style.color = "white";
+    document.querySelector(DEALER.scoreSpan).textContent = "0";
+    document.querySelector(DEALER.scoreSpan).style.color = "white";
+    document.getElementById("header__result").textContent = "Let's Play";
+    document.getElementById("header__result").style.color = "black";
+
+    blackJackGame.isOver = false;
   }
-  YOU.score = 0;
-  DEALER.score = 0;
-  document.querySelector(YOU.scoreSpan).textContent = "0";
-  document.querySelector(YOU.scoreSpan).style.color = "white";
-  document.querySelector(DEALER.scoreSpan).textContent = "0";
-  document.querySelector(DEALER.scoreSpan).style.color = "white";
 }
 
 function updateScore(card, activePlayer) {
@@ -135,5 +154,61 @@ function showResult(activePlayer) {
   } else {
     document.querySelector(activePlayer.scoreSpan).textContent =
       activePlayer.score;
+  }
+}
+
+function blackJackStand() {
+  blackJackGame.isStand = true;
+  let card = randomCard();
+  showCard(DEALER, card);
+  updateScore(card, DEALER);
+  showResult(DEALER);
+  if (DEALER.score > 16) {
+    blackJackGame.isOver = true;
+    showWinner(computeWinner());
+  }
+}
+
+function computeWinner() {
+  let winner;
+  if (YOU.score <= 21) {
+    if (YOU.score > DEALER.score || DEALER.score > 21) {
+      winner = YOU;
+      blackJackGame.wins++;
+    } else if (YOU.score < DEALER.score) {
+      blackJackGame.losses++;
+      winner = DEALER;
+    } else if (YOU.score === DEALER.score) {
+      blackJackGame.draws++;
+    }
+  } else if (YOU.score > 21 && DEALER.score <= 21) {
+    blackJackGame.losses++;
+    winner = DEALER;
+  } else if (YOU.score > 21 && DEALER.score > 21) {
+    blackJackGame.draws++;
+  }
+  return winner;
+}
+
+function showWinner(winner) {
+  let message, messageColor;
+  if (blackJackGame.isOver === true) {
+    if (winner === YOU) {
+      document.getElementById("wins").textContent = blackJackGame.wins;
+      message = "You WON!";
+      messageColor = "green";
+      winSound.play();
+    } else if (winner === DEALER) {
+      document.getElementById("losses").textContent = blackJackGame.losses;
+      message = "You LOST!";
+      messageColor = "red";
+      lossSound.play();
+    } else {
+      document.getElementById("draws").textContent = blackJackGame.draws;
+      message = "DRAW!";
+      messageColor = "yellow";
+    }
+    document.getElementById("header__result").textContent = message;
+    document.getElementById("header__result").style.color = messageColor;
   }
 }
