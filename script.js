@@ -157,16 +157,23 @@ function showResult(activePlayer) {
   }
 }
 
-function blackJackStand() {
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function blackJackStand() {
   blackJackGame.isStand = true;
-  let card = randomCard();
-  showCard(DEALER, card);
-  updateScore(card, DEALER);
-  showResult(DEALER);
-  if (DEALER.score > 16) {
-    blackJackGame.isOver = true;
-    showWinner(computeWinner());
+
+  while (DEALER.score < 16 && blackJackGame.isStand === true) {
+    let card = randomCard();
+    showCard(DEALER, card);
+    updateScore(card, DEALER);
+    showResult(DEALER);
+    await sleep(1000);
   }
+
+  blackJackGame.isOver = true;
+  showWinner(computeWinner());
 }
 
 function computeWinner() {
